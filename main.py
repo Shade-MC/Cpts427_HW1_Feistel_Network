@@ -16,11 +16,10 @@ class FeistelNetwork:
         self.nonce = 0
 
     def encrypt(self, plaintext):
-        cypher_text = 0
+        cypher_text = []
         # breaks the plain text into 4 hex digit blocks
         plain_blocks = [plaintext[i:i+4] for i in range(0, len(plaintext), 4)]
         for block in plain_blocks:
-            cypher_text <<= 16  # shift encrypted text over
             binary_block = int(block, 16)
 
             # add zero padding if the last block is less than 4 hex digits
@@ -32,9 +31,12 @@ class FeistelNetwork:
             self.counter += 1
 
             # xor the plaintext with the encrypted counter and store the result in cypher text
-            cypher_text ^= binary_block ^ cypher
+            cypher_block = hex(binary_block ^ cypher)[2:]
 
-        return hex(cypher_text)
+            cypher_block = f'{"0" * (4-len(cypher_block))}{cypher_block}'
+            cypher_text.append(cypher_block)
+
+        return ''.join(cypher_text)
 
     def encrypt_block(self, block):
         for n in range(self.total_rounds):
@@ -71,17 +73,17 @@ def right_roll(x):
 
 
 def main():
-    nonce = input("Input nonce: \n")
-    key = input("Input key: \n")
-    plaintext = input("Input plaintext: \n")
+    args = input("Input string: \n")
 
-    network = FeistelNetwork(int(key, 16), xor_round_function, subkey_schedule)
-    network.nonce = int(nonce, 16)
+    args = args.split(" ")
 
-    cypher = network.encrypt(plaintext)
-    print(cypher)
+    network = FeistelNetwork(int(args[1], 16), xor_round_function, subkey_schedule)
+    network.nonce = int(args[0], 16)
+
+    cypher = network.encrypt(args[2])
+    print("Cypher Text:    ", cypher)
     network.counter = 0
-    print(network.encrypt(cypher[2:]))
+    print("Decrypted Text: ", network.encrypt(cypher))
 
 
 if __name__ == '__main__':
